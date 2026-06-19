@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>F1 Race Results & Pace Metadata Schema Dashboard</title>
+    <style>
+        :root {
+            --f1-red: #e10600;
+            --dark-bg: #15151e;
+            --card-bg: #1f1f2a;
+            --text-main: #ffffff;
+            --text-muted: #9494a0;
+            --border-color: #38384f;
+            --accent-blue: #00b0ff;
+            --accent-green: #00e676;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--dark-bg); color: var(--text-main); display: flex; min-height: 100vh; }
+        .sidebar { width: 300px; background-color: #0b0b10; border-right: 1px solid var(--border-color); display: flex; flex-direction: column; position: fixed; height: 100vh; }
+        .sidebar-header { padding: 25px 20px; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; gap: 10px; }
+        .sidebar-header h1 { font-size: 16px; font-weight: 800; letter-spacing: -0.5px; color: var(--text-main); }
+        .sidebar-header .badge { background-color: var(--f1-red); color: white; font-size: 11px; padding: 3px 6px; border-radius: 4px; font-weight: bold; }
+        .nav-menu { list-style: none; padding: 20px 10px; flex-grow: 1; }
+        .nav-item { padding: 12px 15px; border-radius: 8px; cursor: pointer; color: var(--text-muted); margin-bottom: 5px; transition: all 0.2s ease; font-weight: 500; }
+        .nav-item:hover { background-color: rgba(255, 255, 255, 0.05); color: var(--text-main); }
+        .nav-item.active { background-color: var(--f1-red); color: white; font-weight: 600; }
+        .sidebar-footer { padding: 15px 20px; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border-color); background-color: #050508; line-height: 1.5; }
+        .main-content { margin-left: 300px; flex-grow: 1; padding: 40px; max-width: 1200px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        h2 { font-size: 28px; margin-bottom: 10px; font-weight: 700; border-left: 5px solid var(--f1-red); padding-left: 15px; }
+        p.subtitle { color: var(--text-muted); margin-bottom: 30px; font-size: 15px; }
+        .card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 25px; margin-bottom: 25px; }
+        .card h3 { font-size: 18px; margin-bottom: 15px; color: var(--text-main); border-bottom: 1px solid var(--border-color); padding-bottom: 8px; }
+        .card p { font-size: 14.5px; line-height: 1.7; color: #e0e0e8; margin-bottom: 12px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 13.5px; background-color: rgba(0,0,0,0.1); }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        th { background-color: rgba(0, 0, 0, 0.3); color: var(--text-main); font-weight: 600; }
+        tr:hover td { background-color: rgba(255, 255, 255, 0.02); }
+        pre { background-color: #0b0b10; border: 1px solid var(--border-color); border-radius: 8px; padding: 20px; overflow-x: auto; font-family: 'Courier New', Courier, monospace; font-size: 13px; line-height: 1.5; color: #e0e0e8; }
+        .code-header { display: flex; justify-content: space-between; align-items: center; background-color: #0b0b10; border: 1px solid var(--border-color); border-bottom: none; padding: 10px 20px; border-top-left-radius: 8px; border-top-right-radius: 8px; font-size: 12px; color: var(--text-muted); margin-top: 15px; }
+        .code-header + pre { border-top-left-radius: 0; border-top-right-radius: 0; margin-top: 0; }
+        .btn-copy { background-color: rgba(255, 255, 255, 0.1); border: none; color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 11px; }
+        .btn-copy:hover { background-color: var(--f1-red); }
+        .tag { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+        .tag-m { background-color: rgba(225, 6, 0, 0.15); color: #ff4d4d; border: 1px solid rgba(225, 6, 0, 0.3); }
+        .tag-o { background-color: rgba(0, 176, 255, 0.15); color: #33c2ff; border: 1px solid rgba(0, 176, 255, 0.3); }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>F1 Race Pace Metadata</h1>
+            <span class="badge">FINAL</span>
+        </div>
+        <ul class="nav-menu">
+            <li class="nav-item active" onclick="switchTab('section-a')">a) Opening Narrative</li>
+            <li class="nav-item" onclick="switchTab('section-b')">b) Metadata Standards</li>
+            <li class="nav-item" onclick="switchTab('section-c')">c) Vocabulary Spec</li>
+            <li class="nav-item" onclick="switchTab('section-d')">d) XSD Schema File</li>
+            <li class="nav-item" onclick="switchTab('section-e')">e) Sample XML Records</li>
+        </ul>
+        <div class="sidebar-footer">
+            <b>소속:</b> 문헌정보학과<br>
+            <b>학번:</b> 2025310382<br>
+            <b>성명:</b> 양승현<br>
+            메타데이터 최종 프로젝트
+        </div>
+    </div>
+
+    <div class="main-content">
+
+        <div id="section-a" class="tab-content active">
+            <h2>a) Opening Narrative</h2>
+            <p class="subtitle">도메인 내 메타데이터 역사, 타겟 유저, 개발 노하우 및 이론적 배경</p>
+            <div class="card">
+                <h3>1. 모터스포츠 도메인 메타데이터의 역사와 배경</h3>
+                <p>포뮬러 원(Formula 1)은 초창기 피트 보드(Pit boards)와 수동 스톱워치를 이용한 아날로그 기록 측정 방식에서 시작하여, 현대에는 차량 한 대당 수백 개의 센서가 실시간 스트리밍 데이터를 뿜어내는 초정밀 데이터 집약형 스포츠로 진화했습니다. 그러나 이러한 방대한 양의 랩 타임, 피트 스톱, 타이어 마모도 데이터는 각 컨스트럭터(팀)나 주관사(FIA, 자회사 등)의 폐쇄적인 포맷이나 단순 플랫 CSV 데이터셋 형태로 파편화되어 존재해 왔습니다. 이로 인해 정보학적 관점에서의 정보 공유, 장기 보존, 크로스-레이스 분석(Cross-race analysis) 측면에서 상호운용성(Interoperability) 보장에 큰 기술적 한계가 존재했습니다.</p>
+                <p>본 메타데이터 스키마는 파편화된 F1 레이스 결과와 페이스 분석 데이터셋을 의미적으로 연결하고 체계적으로 기술하기 위해 고안되었습니다.</p>
+            </div>
+            <div class="card">
+                <h3>2. 상정 유저 (Intended Users)</h3>
+                <p>본 스키마의 주요 타겟 이용자는 다음과 같습니다:<br>
+                • <b>스포츠 데이터 분석가 및 저널리스트</b>: 경기 간 타이어 전략과 페이스 변화를 기계 가독형 데이터로 신속히 추출 및 비교 분석하고자 하는 전문가 그룹.<br>
+                • <b>모터스포츠 아카이비스트 및 역사학자</b>: 수십 년간 축적된 F1의 역사적 레이스 정보와 원시 데이터셋의 출처 및 맥락을 장기 보존하려는 큐레이터.<br>
+                • <b>F1 오픈데이터 개발자 및 데이터 취미 분석가</b>: 파이썬(Python)이나 R을 활용하여 오픈 텔레메트리 데이터 분석 플랫폼을 구축하려는 에코시스템 기여층.</p>
+            </div>
+            <div class="card">
+                <h3>3. 개발 노트 및 이론적 고찰 (평면 구조에서 계층 구조로의 진화)</h3>
+                <p>초기 드래프트 3 설계에서는 관계형 데이터베이스의 테이블 뷰와 유사하게 모든 엘리먼트가 수평적으로 나열된 평면형(Flat) 구조를 취했습니다. 그러나 이러한 구조는 실제 그랑프리 레이스의 현실을 반영하지 못한다는 동료 및 TA의 결정적인 피드백을 받았습니다. 실제 레이스에서 하나의 레이스 자원 밑에는 20명의 드라이버 기록이 수반되며, 각 드라이버는 경기 중 타이어를 여러 번 바꾸는 '다중 타이어 스틴트(Multiple Tire Stints)' 과정을 거치기 때문입니다.</p>
+                <p>이를 해결하기 위해 본 최종 스키마에서는 <b>[계층형 중첩 구조(Nested Hierarchical Structure)]</b>를 명확히 도입하였습니다. <code>f1:DriverRecord</code>라는 상위 래퍼 엘리먼트를 두어 특정 드라이버명, 소속 팀, 최종 순위를 유기적으로 결합시켰으며, 그 하위에 <code>f1:TireStints</code>와 반복 가능한(Repeatable) <code>f1:Stint</code> 엘리먼트를 다중 선언할 수 있도록 보완하여 모터스포츠의 도메인 특성을 완벽히 추상화하는 데 성공했습니다.</p>
+            </div>
+        </div>
+
+        <div id="section-b" class="tab-content">
+            <h2>b) Relevant Metadata Standards</h2>
+            <p class="subtitle">본 스키마 구현에 차용 및 융합된 외부 글로벌 메타데이터 표준</p>
+            <div class="card">
+                <h3>1. Dublin Core Metadata Terms (dcterms / dc)</h3>
+                <p><b>선정 이유:</b> 정보 자원의 발견과 식별을 위한 글로벌 범용 표준입니다. 본 스키마에서는 자원의 핵심 식별자인 타이틀(<code>dcterms:title</code>), 생성일자(<code>dcterms:date</code>), 설명(<code>dcterms:description</code>), 주체(<code>dcterms:creator</code>), 고유 식별코드(<code>dcterms:identifier</code>) 등을 기술하기 위해 도입하였습니다. 이를 통해 모터스포츠 데이터가 다른 문화예술 및 학술 아카이브 인프라와 표준 규격으로 연계될 수 있는 상호운용성의 교두보를 마련했습니다.</p>
+            </div>
+            <div class="card">
+                <h3>2. Data Catalog Vocabulary (dcat)</h3>
+                <p><b>선정 이유:</b> F1 레이스 원시 원격 측정 및 결과 기록은 본질적으로 웹상에서 유통되는 '데이터셋(Dataset)'입니다. 따라서 해당 자원이 어떤 포맷(CSV, JSON, XML)으로 제공되고 유통되는지 데이터 카탈로그 관점에서 정의하기 위해 W3C 표준인 DCAT의 <code>dcat:distribution</code> 모델 개념을 수용하여 데이터 자원의 배포 속성을 보장했습니다.</p>
+            </div>
+            <div class="card">
+                <h3>3. Schema.org (schema) 및 Custom Namespace (f1)</h3>
+                <p><b>선정 이유:</b> 경기 대회(Event), 인물(Person), 조직(Organization), 장소(Place) 간의 관계형 개념 모델 구조를 아키텍처 관점에서 차용하기 위해 수용했습니다. 최종 검증 단계에서는 완전한 모터스포츠 고유 제약 조건을 만족시키기 위해 도메인 전용 독자 네임스페이스(<code>f1:</code>)를 수립하고, 하위에 완벽한 통제어휘집 기반의 엘리먼트들을 독자 선언하여 정밀도를 극대화했습니다.</p>
+            </div>
+        </div>
+
+        <div id="section-c" class="tab-content">
+            <h2>c) Vocabulary Specification & Data Dictionary</h2>
+            <p class="subtitle">전체 스키마 엘리먼트 조망 및 상세 규격 정의서</p>
+            <div class="card">
+                <h3>1. Element Overview Table</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Prefix:Element Name</th>
+                            <th>Label</th>
+                            <th>Cardinality</th>
+                            <th>Type / Vocabulary</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td><code>dcterms:title</code></td><td>레이스 기록 자원 명칭</td><td><span class="tag tag-m">1:1</span></td><td>xs:string</td></tr>
+                        <tr><td><code>dcterms:date</code></td><td>개최 날짜</td><td><span class="tag tag-m">1:1</span></td><td>xs:date (YYYY-MM-DD)</td></tr>
+                        <tr><td><code>dcterms:description</code></td><td>레이스 요약 및 설명</td><td><span class="tag tag-o">0:1</span></td><td>xs:string</td></tr>
+                        <tr><td><code>dcterms:creator</code></td><td>기록 작성 기관</td><td><span class="tag tag-m">1:1</span></td><td>xs:string (예: FIA)</td></tr>
+                        <tr><td><code>dcterms:identifier</code></td><td>시스템 고유 식별자</td><td><span class="tag tag-m">1:1</span></td><td>xs:string / URI</td></tr>
+                        <tr><td><code>f1:GrandPrixName</code></td><td>그랑프리 대회명</td><td><span class="tag tag-m">1:1</span></td><td>xs:string</td></tr>
+                        <tr><td><code>f1:Season</code></td><td>시즌 연도</td><td><span class="tag tag-m">1:1</span></td><td>xs:integer (4-digits)</td></tr>
+                        <tr><td><code>f1:CircuitName</code></td><td>개최 서킷 이름</td><td><span class="tag tag-m">1:1</span></td><td>xs:string</td></tr>
+                        <tr><td><code>f1:DriverRecord</code></td><td>드라이버 결과 컨테이너</td><td><span class="tag tag-m">1:N</span></td><td>Complex Type (중첩 노드)</td></tr>
+                        <tr><td><code>f1:DriverName</code></td><td>드라이버 이름</td><td><span class="tag tag-m">1:1</span></td><td>xs:string (하위 엘리먼트)</td></tr>
+                        <tr><td><code>f1:TeamName</code></td><td>소속 컨스트럭터 팀명</td><td><span class="tag tag-m">1:1</span></td><td>xs:string (하위 엘리먼트)</td></tr>
+                        <tr><td><code>f1:RacePosition</code></td><td>최종 레이스 분류 순위</td><td><span class="tag tag-m">1:1</span></td><td>Controlled Vocabulary (정수 또는 DNF/DNS/DSQ)</td></tr>
+                        <tr><td><code>f1:TireStints</code></td><td>타이어 스틴트 이력 Wrapper</td><td><span class="tag tag-o">0:1</span></td><td>Complex Type (하위 엘리먼트)</td></tr>
+                        <tr><td><code>f1:Stint</code></td><td>개별 스틴트 컴파운드</td><td><span class="tag tag-m">1:N</span></td><td>Controlled Vocabulary (Soft, Medium, Hard, Intermediate, Wet)</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="card">
+                <h3>2. Controlled Vocabularies Appendix</h3>
+                <p>• <b>Race Position Vocabulary:</b> 1부터 20까지의 양의 정수 또는 레이스 미완주/실격 코드로 제한함: <code>[1-20]</code>, <code>DNF</code>(Did Not Finish), <code>DNS</code>(Did Not Start), <code>DSQ</code>(Disqualified).<br>
+                • <b>Tire Compound Vocabulary:</b> 피라미드 규격에 부합하는 피렐리 공식 지정 5대 컴파운드로 강제 제한함: <code>Soft</code>, <code>Medium</code>, <code>Hard</code>, <code>Intermediate</code>, <code>Wet</code>.</p>
+            </div>
+        </div>
+
+        <div id="section-d" class="tab-content">
+            <h2>d) XML Schema Definition (XSD) File</h2>
+            <p class="subtitle">본 메타데이터 표준을 강제하는 주석 및 문서화 내장형 완벽 유효 스키마</p>
+            <div class="code-header">
+                <span>f1_schema.xsd</span>
+                <button class="btn-copy" onclick="copyCode('xsdCode')">XSD 복사</button>
+            </div>
+<pre id="xsdCode">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!-- 
+  ========================================================================
+  [PROJECT] Formula 1 Race Results and Race Pace Metadata Schema (V4)
+  [AUTHOR] Dept. of Library and Information Science, Yang Seung-hyun (2025310382)
+  [DESIGN INTENT COMMENTARY]
+  - Root Node: &lt;RaceRecord&gt; encompasses both global race-level contexts and 
+    nested individual achievements.
+  - Namespace Architecture: Explicitly imports Dublin Core Terms via 'ref' to ensure 
+    global catalog validation interoperability.
+  - Hierarchical Fix: Per peer/TA feedback, a flat structure is abandoned. 
+    &lt;DriverRecord&gt; now encapsulates interconnected attributes (Driver, Team, Position) 
+    and handles multiple repeatable &lt;Stint&gt; tire tags for compound progression mapping.
+  ========================================================================
+--&gt;
+&lt;xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://example.org/f1/schema/"
+           xmlns:f1="http://example.org/f1/schema/"
+           xmlns:dcterms="http://purl.org/dc/terms/"
+           elementFormDefault="qualified"&gt;
+
+    &lt;!-- Import Official Dublin Core Metadata Terms Standard Schema --&gt;
+    &lt;xs:import namespace="http://purl.org/dc/terms/" 
+               schemaLocation="https://www.dublincore.org/schemas/xmls/qdc/dcterms.xsd"/&gt;
+
+    &lt;!-- ROOT ELEMENT DECLARATION --&gt;
+    &lt;xs:element name="RaceRecord"&gt;
+        &lt;xs:annotation&gt;
+            &lt;xs:documentation&gt;The root container holding global Grand Prix event metadata and the nested collection of driver metrics.&lt;/xs:documentation&gt;
+        &lt;/xs:annotation&gt;
+        &lt;xs:complexType&gt;
+            &lt;xs:sequence&gt;
+                &lt;!-- Global Descriptors via Dublin Core --&gt;
+                &lt;xs:element ref="dcterms:title" minOccurs="1" maxOccurs="1"/&gt;
+                &lt;xs:element ref="dcterms:date" minOccurs="1" maxOccurs="1"/&gt;
+                &lt;xs:element ref="dcterms:description" minOccurs="0" maxOccurs="1"/&gt;
+                &lt;xs:element ref="dcterms:creator" minOccurs="1" maxOccurs="1"/&gt;
+                &lt;xs:element ref="dcterms:identifier" minOccurs="1" maxOccurs="1"/&gt;
+                
+                &lt;!-- Domain-Specific High-Level Data --&gt;
+                &lt;xs:element name="GrandPrixName" type="xs:string" minOccurs="1" maxOccurs="1"/&gt;
+                &lt;xs:element name="Season" type="f1:seasonYearType" minOccurs="1" maxOccurs="1"/&gt;
+                &lt;xs:element name="CircuitName" type="xs:string" minOccurs="1" maxOccurs="1"/&gt;
+                
+                &lt;!-- Nested Driver Blocks: Solves Flat-Structure Integrity Flaws --&gt;
+                &lt;xs:element name="DriverRecord" minOccurs="1" maxOccurs="unbounded"&gt;
+                    &lt;xs:complexType&gt;
+                        &lt;xs:sequence&gt;
+                            &lt;xs:element name="DriverName" type="xs:string" minOccurs="1" maxOccurs="1"/&gt;
+                            &lt;xs:element name="TeamName" type="xs:string" minOccurs="1" maxOccurs="1"/&gt;
+                            &lt;xs:element name="RacePosition" type="f1:racePositionType" minOccurs="1" maxOccurs="1"/&gt;
+                            
+                            &lt;!-- Multi-Stint Progression Container --&gt;
+                            &lt;xs:element name="TireStints" minOccurs="0" maxOccurs="1"&gt;
+                                &lt;xs:complexType&gt;
+                                    &lt;xs:sequence&gt;
+                                        &lt;!-- Repeatable Stint Order mapping real race compound shifts --&gt;
+                                        &lt;xs:element name="Stint" type="f1:tireCompoundType" minOccurs="1" maxOccurs="unbounded"/&gt;
+                                    &lt;/xs:sequence&gt;
+                                &lt;/xs:complexType&gt;
+                            &lt;/xs:element&gt;
+                        &lt;/xs:sequence&gt;
+                    &lt;/xs:complexType&gt;
+                &lt;/xs:element&gt;
+            &lt;/xs:sequence&gt;
+        &lt;/xs:complexType&gt;
+    &lt;/xs:element&gt;
+
+    &lt;!-- CONTROLLED VOCABULARY SIMPLE TYPES --&gt;
+    &lt;xs:simpleType name="seasonYearType"&gt;
+        &lt;xs:restriction base="xs:integer"&gt;
+            &lt;xs:minInclusive value="1950"/&gt;
+            &lt;xs:maxInclusive value="2099"/&gt;
+        &lt;/xs:restriction&gt;
+    &lt;/xs:simpleType&gt;
+
+    &lt;xs:simpleType name="racePositionType"&gt;
+        &lt;xs:restriction base="xs:string"&gt;
+            &lt;xs:pattern value="([1-9]|1[0-9]|20)|DNF|DNS|DSQ"/&gt;
+        &lt;/xs:restriction&gt;
+    &lt;/xs:simpleType&gt;
+
+    &lt;xs:simpleType name="tireCompoundType"&gt;
+        &lt;xs:restriction base="xs:string"&gt;
+            &lt;xs:enumeration value="Soft"/&gt;
+            &lt;xs:enumeration value="Medium"/&gt;
+            &lt;xs:enumeration value="Hard"/&gt;
+            &lt;xs:enumeration value="Intermediate"/&gt;
+            &lt;xs:enumeration value="Wet"/&gt;
+        &lt;/xs:restriction&gt;
+    &lt;/xs:simpleType&gt;
+
+&lt;/xs:schema&gt;</pre>
+        </div>
+
+        <div id="section-e" class="tab-content">
+            <h2>e) Sample XML Records</h2>
+            <p class="subtitle">위에서 기술한 구조 제약 조건을 완전히 준수하는 2개의 유효한 실증적 데이터 인스턴스</p>
+            
+            <div class="code-header">
+                <span>bahrain_2024_instance.xml (레코드 1)</span>
+                <button class="btn-copy" onclick="copyCode('xmlCode1')">XML 레코드 1 복사</button>
+            </div>
+<pre id="xmlCode1">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!-- [Design Intent] 2024 바레인 개막전 결과 및 맥스 페르스타펜의 다중 타이어 교체 이력 반영 인스턴스 --&gt;
+&lt;f1:RaceRecord xmlns:f1="http://example.org/f1/schema/"
+               xmlns:dcterms="http://purl.org/dc/terms/"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://example.org/f1/schema/ f1_schema.xsd"&gt;
+    
+    &lt;dcterms:title&gt;2024 Bahrain Grand Prix Official Classification dataset&lt;/dcterms:title&gt;
+    &lt;dcterms:date&gt;2024-03-02&lt;/dcterms:date&gt;
+    &lt;dcterms:description&gt;Official race metrics detailing pit strategy progression and finishing positions at Sakhir.&lt;/dcterms:description&gt;
+    &lt;dcterms:creator&gt;FIA Statistical Office&lt;/dcterms:creator&gt;
+    &lt;dcterms:identifier&gt;f1-dataset:2024:gp01:results&lt;/dcterms:identifier&gt;
+    
+    &lt;f1:GrandPrixName&gt;Bahrain Grand Prix&lt;/f1:GrandPrixName&gt;
+    &lt;f1:Season&gt;2024&lt;/f1:Season&gt;
+    &lt;f1:CircuitName&gt;Bahrain International Circuit&lt;/f1:CircuitName&gt;
+    
+    &lt;!-- 레이스 우승자 정보 기록 (중첩 계층화 및 Soft-Hard-Soft 다중 스틴트 증명) --&gt;
+    &lt;f1:DriverRecord&gt;
+        &lt;f1:DriverName&gt;Max Verstappen&lt;/f1:DriverName&gt;
+        &lt;f1:TeamName&gt;Red Bull Racing&lt;/f1:TeamName&gt;
+        &lt;f1:RacePosition&gt;1&lt;/f1:RacePosition&gt;
+        &lt;f1:TireStints&gt;
+            &lt;f1:Stint&gt;Soft&lt;/f1:Stint&gt;
+            &lt;f1:Stint&gt;Hard&lt;/f1:Stint&gt;
+            &lt;f1:Stint&gt;Soft&lt;/f1:Stint&gt;
+        &lt;/f1:TireStints&gt;
+    &lt;/f1:DriverRecord&gt;
+&lt;/f1:RaceRecord&gt;</pre>
+
+            <div class="code-header" style="margin-top: 30px;">
+                <span>saudi_2024_instance.xml (레코드 2)</span>
+                <button class="btn-copy" onclick="copyCode('xmlCode2')">XML 레코드 2 복사</button>
+            </div>
+<pre id="xmlCode2">&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!-- [Design Intent] 복수 드라이버 수용성 및 예외 통제어휘(DNF) 정상 유효성 증명 인스턴스 --&gt;
+&lt;f1:RaceRecord xmlns:f1="http://example.org/f1/schema/"
+               xmlns:dcterms="http://purl.org/dc/terms/"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://example.org/f1/schema/ f1_schema.xsd"&gt;
+    
+    &lt;dcterms:title&gt;2024 Saudi Arabian Grand Prix Pace Summary&lt;/dcterms:title&gt;
+    &lt;dcterms:date&gt;2024-03-09&lt;/dcterms:date&gt;
+    &lt;dcterms:description&gt;Race pace records for Jeddah Corniche Circuit demonstrating multi-driver integration.&lt;/dcterms:description&gt;
+    &lt;dcterms:creator&gt;FIA Statistical Office&lt;/dcterms:creator&gt;
+    &lt;dcterms:identifier&gt;f1-dataset:2024:gp02:results&lt;/dcterms:identifier&gt;
+    
+    &lt;f1:GrandPrixName&gt;Saudi Arabian Grand Prix&lt;/f1:GrandPrixName&gt;
+    &lt;f1:Season&gt;2024&lt;/f1:Season&gt;
+    &lt;f1:CircuitName&gt;Jeddah Corniche Circuit&lt;/f1:CircuitName&gt;
+    
+    &lt;!-- 드라이버 1 --&gt;
+    &lt;f1:DriverRecord&gt;
+        &lt;f1:DriverName&gt;Sergio Perez&lt;/f1:DriverName&gt;
+        &lt;f1:TeamName&gt;Red Bull Racing&lt;/f1:TeamName&gt;
+        &lt;f1:RacePosition&gt;2&lt;/f1:RacePosition&gt;
+        &lt;f1:TireStints&gt;
+            &lt;f1:Stint&gt;Medium&lt;/f1:Stint&gt;
+            &lt;f1:Stint&gt;Hard&lt;/f1:Stint&gt;
+        &lt;/f1:TireStints&gt;
+    &lt;/f1:DriverRecord&gt;
+    
+    &lt;!-- 드라이버 2: 리타이어(DNF) 차량의 비반복 단일 스틴트 상태 기술 검증 --&gt;
+    &lt;f1:DriverRecord&gt;
+        &lt;f1:DriverName&gt;Pierre Gasly&lt;/f1:DriverName&gt;
+        &lt;f1:TeamName&gt;Alpine F1 Team&lt;/f1:TeamName&gt;
+        &lt;f1:RacePosition&gt;DNF&lt;/f1:RacePosition&gt;
+        &lt;f1:TireStints&gt;
+            &lt;f1:Stint&gt;Medium&lt;/f1:Stint&gt;
+        &lt;/f1:TireStints&gt;
+    &lt;/f1:DriverRecord&gt;
+&lt;/f1:RaceRecord&gt;</pre>
+        </div>
+
+    </div>
+
+    <script>
+        function switchTab(tabId) {
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            const activeNav = Array.from(document.querySelectorAll('.nav-item')).find(item => {
+                if (tabId === 'section-a') return item.innerText.includes('Opening');
+                if (tabId === 'section-b') return item.innerText.includes('Metadata Standards');
+                if (tabId === 'section-c') return item.innerText.includes('Vocabulary Spec');
+                if (tabId === 'section-d') return item.innerText.includes('XSD Schema');
+                if (tabId === 'section-e') return item.innerText.includes('Sample XML');
+                return false;
+            });
+            if (activeNav) activeNav.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+        function copyCode(elementId) {
+            const codeText = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(codeText).then(() => { alert('코드가 성공적으로 복사되었습니다.'); });
+        }
+    </script>
+</body>
+</html>
