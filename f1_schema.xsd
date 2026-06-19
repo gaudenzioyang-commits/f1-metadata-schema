@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://example.org/f1/schema/"
+           xmlns:f1="http://example.org/f1/schema/"
+           xmlns:dcterms="http://purl.org/dc/terms/"
+           elementFormDefault="qualified">
+
+    <xs:import namespace="http://purl.org/dc/terms/" 
+               schemaLocation="https://www.dublincore.org/schemas/xmls/qdc/2008/02/11/dcterms.xsd"/>
+
+    <xs:simpleType name="PositionType">
+        <xs:restriction base="xs:string">
+            <xs:pattern value="([1-9]|1[0-9]|20|DNF|DNS|DSQ)"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="StintType">
+        <xs:sequence>
+            <xs:element name="TireCompound" type="xs:string"/>
+            <xs:element name="Laps" type="xs:integer"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="DriverRecordType">
+        <xs:sequence>
+            <xs:element name="DriverName" type="xs:string"/>
+            <xs:element name="Team" type="xs:string"/>
+            <xs:element name="Position" type="f1:PositionType"/>
+            <xs:element name="Stint" type="f1:StintType" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:element name="RaceRecord">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element ref="dcterms:title"/>
+                <xs:element ref="dcterms:date"/>
+                <xs:element name="Circuit" type="xs:string"/>
+                <xs:element name="DriverRecord" type="f1:DriverRecordType" maxOccurs="unbounded"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>

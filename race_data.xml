@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<f1:RaceRecord xmlns:f1="http://example.org/f1/schema/"
+               xmlns:dcterms="http://purl.org/dc/terms/"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://example.org/f1/schema/ https://gaudenzioyang-commits.github.io/f1-metadata-schema/f1_schema.xsd">
+
+    <dcterms:title>2024 Bahrain Grand Prix Race Results</dcterms:title>
+    <dcterms:date>2024-03-02</dcterms:date>
+    <f1:Circuit>Bahrain International Circuit</f1:Circuit>
+    
+    <f1:DriverRecord>
+        <f1:DriverName>Max Verstappen</f1:DriverName>
+        <f1:Team>Red Bull Racing</f1:Team>
+        <f1:Position>1</f1:Position>
+        <f1:Stint>
+            <f1:TireCompound>Soft</f1:TireCompound>
+            <f1:Laps>17</f1:Laps>
+        </f1:Stint>
+        <f1:Stint>
+            <f1:TireCompound>Hard</f1:TireCompound>
+            <f1:Laps>40</f1:Laps>
+        </f1:Stint>
+    </f1:DriverRecord>
+
+    <f1:DriverRecord>
+        <f1:DriverName>Charles Leclerc</f1:DriverName>
+        <f1:Team>Ferrari</f1:Team>
+        <f1:Position>DNF</f1:Position>
+        <f1:Stint>
+            <f1:TireCompound>Soft</f1:TireCompound>
+            <f1:Laps>15</f1:Laps>
+        </f1:Stint>
+    </f1:DriverRecord>
+    
+</f1:RaceRecord>
